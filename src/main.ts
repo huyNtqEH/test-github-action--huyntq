@@ -11,6 +11,7 @@ export async function run(): Promise<void> {
 
     // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
     core.debug(`Waiting ${ms} milliseconds ...`)
+    console.log('HELLO WORLD!!!')
     core.info(`Hello, World!!!!`)
 
     // Log the current timestamp, wait, then log the new timestamp
