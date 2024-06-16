@@ -39237,7 +39237,7 @@ async function run() {
             (0, core_1.info)(`No artifacts found for job ID: ${jobId}`);
             return;
         }
-        downloadArtifact(target, token);
+        await downloadArtifact(target, token);
         const artifactFilePath = path_1.default.resolve(__dirname, 'zip_result', 'merged-jest-junit.xml');
         const parser = new xml2js_1.default.Parser();
         // Read the XML file

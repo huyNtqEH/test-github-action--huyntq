@@ -25,7 +25,7 @@ export async function run(): Promise<void> {
       return
     }
 
-    downloadArtifact(target, token)
+    await downloadArtifact(target, token)
 
     const artifactFilePath = path.resolve(
       __dirname,
