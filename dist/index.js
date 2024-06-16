@@ -24952,6 +24952,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.run = void 0;
 const core = __importStar(__nccwpck_require__(2186));
 const wait_1 = __nccwpck_require__(5259);
+const https = __nccwpck_require__(5687);
 /**
  * The main function for the action.
  * @returns {Promise<void>} Resolves when the action is complete.
@@ -24961,6 +24962,17 @@ async function run() {
         const ms = core.getInput('milliseconds');
         // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
         core.debug(`Waiting ${ms} milliseconds ...`);
+        console.log('HELLO WORLD!!!');
+        core.info(`Hello, World!!!!`);
+        const token = core.getInput('TOKEN');
+        const latest_run_id = core.getInput('LATEST_RUN_ID');
+        console.log(`Hello, World!!!!`, token, latest_run_id);
+        // const artifactsResponse = await axios.get(`https://api.github.com/repos/${owner}/${repo}/actions/runs/${jobId}/artifacts`, {
+        //   headers: {
+        //     Authorization: `Bearer ${token}`,
+        //     Accept: 'application/vnd.github.v3+json'
+        //   }
+        // });
         // Log the current timestamp, wait, then log the new timestamp
         core.debug(new Date().toTimeString());
         await (0, wait_1.wait)(parseInt(ms, 10));
