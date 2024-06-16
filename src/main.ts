@@ -70,9 +70,10 @@ function logArtifactContents(artifactName) {
 }
 
 function fetchArtifacts(jobId, token) {
+  console.log(token, jobId, 'data')
   return new Promise((resolve, reject) => {
     const options = {
-      hostname: 'api.github.com',
+      hostname: 'https://api.github.com',
       path: `/repos/Thinkei/frontend-core/actions/runs/${jobId}/artifacts`,
       method: 'GET',
       headers: {
