@@ -1,6 +1,10 @@
+// @ts-nocheck
 import * as core from '@actions/core'
+import { getInput, setFailed, info } from '@actions/core'
 import { wait } from './wait'
-const https = require('https')
+import { get } from 'https'
+import { writeFileSync, createWriteStream } from 'fs'
+import { join } from 'path'
 
 /**
  * The main function for the action.
@@ -18,7 +22,15 @@ export async function run(): Promise<void> {
     const token = core.getInput('TOKEN')
     const latest_run_id = core.getInput('LATEST_RUN_ID')
     console.log(`Hello, World!!!!`, token, latest_run_id)
+    const artifacts = await fetchArtifacts(latest_run_id, token)
+    if (!artifacts || artifacts.length === 0) {
+      info(`No artifacts found for job ID: ${jobId}`)
+      return
+    }
 
+    for (const artifact of artifacts) {
+      await downloadArtifact(artifact, token)
+    }
     // const artifactsResponse = await axios.get(`https://api.github.com/repos/${owner}/${repo}/actions/runs/${jobId}/artifacts`, {
     //   headers: {
     //     Authorization: `Bearer ${token}`,
@@ -37,4 +49,75 @@ export async function run(): Promise<void> {
     // Fail the workflow run if an error occurs
     if (error instanceof Error) core.setFailed(error.message)
   }
+}
+
+function fetchArtifacts(jobId, token) {
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'api.github.com',
+      path: `/repos/Thinkei/frontend-core/actions/runs/${jobId}/artifacts`,
+      method: 'GET',
+      headers: {
+        Authorization: `token ${token}`,
+        'User-Agent': 'GitHub Actions Fetch Artifacts',
+        Accept: 'application/vnd.github.v3+json'
+      }
+    }
+
+    get(options, res => {
+      let data = ''
+      res.on('data', chunk => {
+        data += chunk
+      })
+      res.on('end', () => {
+        if (res.statusCode === 200) {
+          const artifacts = JSON.parse(data).artifacts
+          resolve(artifacts)
+        } else {
+          reject(
+            new Error(
+              `Failed to fetch artifacts: ${res.statusCode} ${res.statusMessage}`
+            )
+          )
+        }
+      })
+    }).on('error', e => {
+      reject(e)
+    })
+  })
+}
+
+function downloadArtifact(artifact, token) {
+  return new Promise((resolve, reject) => {
+    const downloadUrl = artifact.archive_download_url
+    const artifactPath = join(process.cwd(), `${artifact.name}.zip`)
+    const fileStream = createWriteStream(artifactPath)
+
+    const options = {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'User-Agent': 'GitHub Actions Fetch Artifacts',
+        Accept: 'application/vnd.github.v3+json'
+      }
+    }
+
+    get(downloadUrl, options, res => {
+      if (res.statusCode === 200) {
+        res.pipe(fileStream)
+        fileStream.on('finish', () => {
+          fileStream.close()
+          info(`Downloaded artifact: ${artifact.name} to ${artifactPath}`)
+          resolve()
+        })
+      } else {
+        reject(
+          new Error(
+            `Failed to download artifact: ${res.statusCode} ${res.statusMessage}`
+          )
+        )
+      }
+    }).on('error', e => {
+      reject(e)
+    })
+  })
 }

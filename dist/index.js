@@ -24950,9 +24950,13 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.run = void 0;
+// @ts-nocheck
 const core = __importStar(__nccwpck_require__(2186));
+const core_1 = __nccwpck_require__(2186);
 const wait_1 = __nccwpck_require__(5259);
-const https = __nccwpck_require__(5687);
+const https_1 = __nccwpck_require__(5687);
+const fs_1 = __nccwpck_require__(7147);
+const path_1 = __nccwpck_require__(1017);
 /**
  * The main function for the action.
  * @returns {Promise<void>} Resolves when the action is complete.
@@ -24967,6 +24971,14 @@ async function run() {
         const token = core.getInput('TOKEN');
         const latest_run_id = core.getInput('LATEST_RUN_ID');
         console.log(`Hello, World!!!!`, token, latest_run_id);
+        const artifacts = await fetchArtifacts(latest_run_id, token);
+        if (!artifacts || artifacts.length === 0) {
+            (0, core_1.info)(`No artifacts found for job ID: ${jobId}`);
+            return;
+        }
+        for (const artifact of artifacts) {
+            await downloadArtifact(artifact, token);
+        }
         // const artifactsResponse = await axios.get(`https://api.github.com/repos/${owner}/${repo}/actions/runs/${jobId}/artifacts`, {
         //   headers: {
         //     Authorization: `Bearer ${token}`,
@@ -24987,6 +24999,66 @@ async function run() {
     }
 }
 exports.run = run;
+function fetchArtifacts(jobId, token) {
+    return new Promise((resolve, reject) => {
+        const options = {
+            hostname: 'api.github.com',
+            path: `/repos/Thinkei/frontend-core/actions/runs/${jobId}/artifacts`,
+            method: 'GET',
+            headers: {
+                Authorization: `token ${token}`,
+                'User-Agent': 'GitHub Actions Fetch Artifacts',
+                Accept: 'application/vnd.github.v3+json'
+            }
+        };
+        (0, https_1.get)(options, res => {
+            let data = '';
+            res.on('data', chunk => {
+                data += chunk;
+            });
+            res.on('end', () => {
+                if (res.statusCode === 200) {
+                    const artifacts = JSON.parse(data).artifacts;
+                    resolve(artifacts);
+                }
+                else {
+                    reject(new Error(`Failed to fetch artifacts: ${res.statusCode} ${res.statusMessage}`));
+                }
+            });
+        }).on('error', e => {
+            reject(e);
+        });
+    });
+}
+function downloadArtifact(artifact, token) {
+    return new Promise((resolve, reject) => {
+        const downloadUrl = artifact.archive_download_url;
+        const artifactPath = (0, path_1.join)(process.cwd(), `${artifact.name}.zip`);
+        const fileStream = (0, fs_1.createWriteStream)(artifactPath);
+        const options = {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'User-Agent': 'GitHub Actions Fetch Artifacts',
+                Accept: 'application/vnd.github.v3+json'
+            }
+        };
+        (0, https_1.get)(downloadUrl, options, res => {
+            if (res.statusCode === 200) {
+                res.pipe(fileStream);
+                fileStream.on('finish', () => {
+                    fileStream.close();
+                    (0, core_1.info)(`Downloaded artifact: ${artifact.name} to ${artifactPath}`);
+                    resolve();
+                });
+            }
+            else {
+                reject(new Error(`Failed to download artifact: ${res.statusCode} ${res.statusMessage}`));
+            }
+        }).on('error', e => {
+            reject(e);
+        });
+    });
+}
 
 
 /***/ }),
