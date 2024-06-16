@@ -1,72 +1,64 @@
 // @ts-nocheck
 import * as core from '@actions/core'
-import { getInput, setFailed, info } from '@actions/core'
-import { wait } from './wait'
+import { info } from '@actions/core'
 import { get } from 'https'
-import { writeFileSync, createWriteStream } from 'fs'
-import { join } from 'path'
+import { createWriteStream, readdir, readFile } from 'fs'
 import AdmZip from 'adm-zip'
+import xml2js from 'xml2js'
+import fetch from 'node-fetch'
+import path from 'path'
 
 /**
  * The main function for the action.
  * @returns {Promise<void>} Resolves when the action is complete.
  */
+
 export async function run(): Promise<void> {
   try {
-    const ms: string = core.getInput('milliseconds')
-
-    // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
-    core.debug(`Waiting ${ms} milliseconds ...`)
-    console.log('HELLO WORLD!!!')
-    core.info(`Hello, World!!!!`)
-
     const token = core.getInput('TOKEN')
     const latest_run_id = core.getInput('LATEST_RUN_ID')
-    console.log(`Hello, World!!!!`, token, latest_run_id)
     const artifacts = await fetchArtifacts(latest_run_id, token)
-    if (!artifacts || artifacts.length === 0) {
+    const target = artifacts.find(at => at.name === 'merged-jest-junit.xml')
+    console.log('hello')
+    if (!target) {
       info(`No artifacts found for job ID: ${jobId}`)
       return
     }
 
-    for (const artifact of artifacts) {
-      await downloadArtifact(artifact, token)
-      logArtifactContents(artifact.name)
-    }
-    // const artifactsResponse = await axios.get(`https://api.github.com/repos/${owner}/${repo}/actions/runs/${jobId}/artifacts`, {
-    //   headers: {
-    //     Authorization: `Bearer ${token}`,
-    //     Accept: 'application/vnd.github.v3+json'
-    //   }
-    // });
+    downloadArtifact(target, token)
+
+    const artifactFilePath = path.resolve(
+      __dirname,
+      'zip_result',
+      'merged-jest-junit.xml'
+    )
+
+    const parser = new xml2js.Parser()
+
+    // Read the XML file
+    readFile(artifactFilePath, (err, data) => {
+      if (err) {
+        console.error('Failed to read the XML file:', err)
+        return
+      }
+
+      // Parse the XML file
+      parser.parseString(data, (err, result) => {
+        if (err) {
+          console.error('Failed to parse XML:', err)
+          return
+        }
+        const json = JSON.stringify(result, null, 2)
+        // Output the JSON result
+        console.log('XML converted to JSON:', json)
+      })
+    })
 
     // Log the current timestamp, wait, then log the new timestamp
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
-
-    // Set outputs for other workflow steps to use
-    core.setOutput('time', new Date().toTimeString())
   } catch (error) {
     // Fail the workflow run if an error occurs
     if (error instanceof Error) core.setFailed(error.message)
   }
-}
-
-function logArtifactContents(artifactName) {
-  const artifactPath = join(process.cwd(), `${artifactName}.zip`)
-  const zip = new AdmZip(artifactPath)
-  const zipEntries = zip.getEntries()
-
-  zipEntries.forEach(entry => {
-    if (entry.isDirectory) {
-      info(`Directory: ${entry.entryName}`)
-    } else {
-      info(`File: ${entry.entryName}`)
-      const fileContent = zip.readAsText(entry)
-      info(`Content: ${fileContent}`)
-    }
-  })
 }
 
 function fetchArtifacts(jobId, token) {
@@ -82,9 +74,6 @@ function fetchArtifacts(jobId, token) {
       }
     }
 
-    console.log('HTTP Request Details:')
-    console.log(options)
-
     get(options, res => {
       let data = ''
       res.on('data', chunk => {
@@ -95,7 +84,6 @@ function fetchArtifacts(jobId, token) {
           const artifacts = JSON.parse(data).artifacts
           resolve(artifacts)
         } else {
-          console.log(res)
           reject(
             new Error(
               `Failed to fetch artifacts: ${res.statusCode} ${res.statusMessage}`
@@ -109,37 +97,58 @@ function fetchArtifacts(jobId, token) {
   })
 }
 
-function downloadArtifact(artifact, token) {
-  return new Promise((resolve, reject) => {
-    const downloadUrl = artifact.archive_download_url
-    const artifactPath = join(process.cwd(), `${artifact.name}.zip`)
-    const fileStream = createWriteStream(artifactPath)
+// Function to unzip the artifact
+function unzipArtifact(zipFilePath) {
+  console.log('test', zipFilePath)
+  try {
+    const zip = new AdmZip(zipFilePath)
+    const outputDir = path.resolve(__dirname, 'zip_result')
+    zip.extractAllTo(outputDir, true)
 
-    const options = {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'User-Agent': 'GitHub Actions Fetch Artifacts',
-        Accept: 'application/vnd.github.v3+json'
-      }
-    }
-
-    get(downloadUrl, options, res => {
-      if (res.statusCode === 200) {
-        res.pipe(fileStream)
-        fileStream.on('finish', () => {
-          fileStream.close()
-          info(`Downloaded artifact: ${artifact.name} to ${artifactPath}`)
-          resolve()
-        })
+    // List the contents of the directory to verify extraction
+    readdir(outputDir, (err, files) => {
+      if (err) {
+        console.error('Error reading unzipped directory:', err)
       } else {
-        reject(
-          new Error(
-            `Failed to download artifact: ${res.statusCode} ${res.statusMessage}`
-          )
-        )
+        console.log('Unzipped files:', files)
       }
-    }).on('error', e => {
-      reject(e)
     })
-  })
+  } catch (error) {
+    console.error('Error unzipping artifact:', error)
+  }
+}
+
+async function downloadArtifact(artifact, token) {
+  const options = {
+    method: 'GET',
+    headers: {
+      Authorization: `token ${token}`,
+      Accept: 'application/vnd.github.v3+json'
+    }
+  }
+
+  try {
+    const response = await fetch(artifact.archive_download_url, options)
+
+    if (!response.ok) {
+      throw new Error(
+        `HTTP error! status: ${response.status} ${response.statusText}`
+      )
+    }
+    const zipFilePath = path.resolve(__dirname, `artifact_123.zip`)
+
+    const dest = createWriteStream(zipFilePath)
+    response.body.pipe(dest)
+
+    dest.on('finish', () => {
+      console.log('Artifact downloaded successfully.')
+      unzipArtifact(zipFilePath)
+    })
+
+    dest.on('error', err => {
+      console.error('Error writing to file', err)
+    })
+  } catch (error) {
+    console.error('Error downloading artifact:', error)
+  }
 }
