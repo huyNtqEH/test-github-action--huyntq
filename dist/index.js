@@ -39232,31 +39232,11 @@ async function run() {
         const latest_run_id = core.getInput('LATEST_RUN_ID');
         const artifacts = await fetchArtifacts(latest_run_id, token);
         const target = artifacts.find(at => at.name === 'merged-jest-junit.xml');
-        console.log('hello');
         if (!target) {
             (0, core_1.info)(`No artifacts found for job ID: ${jobId}`);
             return;
         }
         await downloadArtifact(target, token);
-        const artifactFilePath = path_1.default.resolve(__dirname, 'zip_result', 'merged-jest-junit.xml');
-        const parser = new xml2js_1.default.Parser();
-        // Read the XML file
-        (0, fs_1.readFile)(artifactFilePath, (err, data) => {
-            if (err) {
-                console.error('Failed to read the XML file:', err);
-                return;
-            }
-            // Parse the XML file
-            parser.parseString(data, (err, result) => {
-                if (err) {
-                    console.error('Failed to parse XML:', err);
-                    return;
-                }
-                const json = JSON.stringify(result, null, 2);
-                // Output the JSON result
-                console.log('XML converted to JSON:', json);
-            });
-        });
         // Log the current timestamp, wait, then log the new timestamp
     }
     catch (error) {
@@ -39311,6 +39291,25 @@ function unzipArtifact(zipFilePath) {
             }
             else {
                 console.log('Unzipped files:', files);
+                const artifactFilePath = path_1.default.resolve(__dirname, 'zip_result', 'merged-jest-junit.xml');
+                const parser = new xml2js_1.default.Parser();
+                // Read the XML file
+                (0, fs_1.readFile)(artifactFilePath, (err, data) => {
+                    if (err) {
+                        console.error('Failed to read the XML file:', err);
+                        return;
+                    }
+                    // Parse the XML file
+                    parser.parseString(data, (err, result) => {
+                        if (err) {
+                            console.error('Failed to parse XML:', err);
+                            return;
+                        }
+                        const json = JSON.stringify(result, null, 2);
+                        // Output the JSON result
+                        console.log('XML converted to JSON:', json);
+                    });
+                });
             }
         });
     }
