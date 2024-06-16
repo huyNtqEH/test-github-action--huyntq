@@ -9,6 +9,12 @@ branding:
 
 # Define your inputs here.
 inputs:
+  TOKEN: 
+    description: "Github token"
+    required: true
+  LATEST_RUN_ID: 
+    description: "Id to get artifacts"
+    required: true
   milliseconds:
     description: 'Your input description here'
     required: true
