@@ -27893,18 +27893,19 @@ function logArtifactContents(artifactName) {
     });
 }
 function fetchArtifacts(jobId, token) {
-    console.log(token, jobId, 'data');
     return new Promise((resolve, reject) => {
         const options = {
-            hostname: 'https://api.github.com',
+            hostname: 'api.github.com',
             path: `/repos/Thinkei/frontend-core/actions/runs/${jobId}/artifacts`,
             method: 'GET',
             headers: {
-                Authorization: `token ${token}`,
+                Authorization: `Bearer ${token}`,
                 'User-Agent': 'GitHub Actions Fetch Artifacts',
                 Accept: 'application/vnd.github.v3+json'
             }
         };
+        console.log('HTTP Request Details:');
+        console.log(options);
         (0, https_1.get)(options, res => {
             let data = '';
             res.on('data', chunk => {
