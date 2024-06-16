@@ -27917,6 +27917,7 @@ function fetchArtifacts(jobId, token) {
                     resolve(artifacts);
                 }
                 else {
+                    console.log(res);
                     reject(new Error(`Failed to fetch artifacts: ${res.statusCode} ${res.statusMessage}`));
                 }
             });

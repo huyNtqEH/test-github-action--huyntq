@@ -95,6 +95,7 @@ function fetchArtifacts(jobId, token) {
           const artifacts = JSON.parse(data).artifacts
           resolve(artifacts)
         } else {
+          console.log(res)
           reject(
             new Error(
               `Failed to fetch artifacts: ${res.statusCode} ${res.statusMessage}`
