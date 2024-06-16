@@ -5,6 +5,7 @@ import { wait } from './wait'
 import { get } from 'https'
 import { writeFileSync, createWriteStream } from 'fs'
 import { join } from 'path'
+import AdmZip from 'adm-zip'
 
 /**
  * The main function for the action.
@@ -30,6 +31,7 @@ export async function run(): Promise<void> {
 
     for (const artifact of artifacts) {
       await downloadArtifact(artifact, token)
+      logArtifactContents(artifact.name)
     }
     // const artifactsResponse = await axios.get(`https://api.github.com/repos/${owner}/${repo}/actions/runs/${jobId}/artifacts`, {
     //   headers: {
@@ -49,6 +51,22 @@ export async function run(): Promise<void> {
     // Fail the workflow run if an error occurs
     if (error instanceof Error) core.setFailed(error.message)
   }
+}
+
+function logArtifactContents(artifactName) {
+  const artifactPath = join(process.cwd(), `${artifactName}.zip`)
+  const zip = new AdmZip(artifactPath)
+  const zipEntries = zip.getEntries()
+
+  zipEntries.forEach(entry => {
+    if (entry.isDirectory) {
+      info(`Directory: ${entry.entryName}`)
+    } else {
+      info(`File: ${entry.entryName}`)
+      const fileContent = zip.readAsText(entry)
+      info(`Content: ${fileContent}`)
+    }
+  })
 }
 
 function fetchArtifacts(jobId, token) {
