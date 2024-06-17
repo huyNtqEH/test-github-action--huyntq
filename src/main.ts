@@ -115,6 +115,9 @@ function unzipArtifact(zipFilePath) {
         return
       }
 
+      // output: ['src/modules/employee/employee.component.spec.ts', 'src/modules/employee/employee.service.spec.ts', ...]
+
+      //start splitting test
       console.log('Spec files found:', specFiles)
     })
   } catch (error) {
