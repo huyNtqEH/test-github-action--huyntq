@@ -16,6 +16,15 @@ import glob from 'glob'
 
 const targetDirectory = 'apps/hr-web-app' // Directory to search within
 
+const stripToSrcModule = filePath => {
+  const pattern = 'src/modules/'
+  const index = filePath.indexOf(pattern)
+  if (index !== -1) {
+    return filePath.substring(index)
+  }
+  return filePath // Return the original path if 'src/modules/' is not found
+}
+
 // Function to gather all .spec files in the repo
 const gatherSpecFiles = callback => {
   const pattern = `${targetDirectory}/src/**/*.spec.{js,ts,tsx}` // Pattern to match all .spec.js files
@@ -30,7 +39,7 @@ const gatherSpecFiles = callback => {
     // Resolve absolute paths for the spec files
     const absolutePaths = files.map(file => path.resolve(file))
 
-    callback(null, absolutePaths)
+    callback(null, absolutePaths.map(stripToSrcModule))
   })
 }
 
@@ -92,24 +101,6 @@ function fetchArtifacts(jobId, token) {
   })
 }
 
-export async function getTestFileResults(junitXmlReportFile) {
-  const testFileResults = new Map()
-
-  const xml = fs.readFileSync(junitXmlReportFile, 'utf8')
-  const result = await xml2js.parseStringPromise(xml)
-  const testSuites = result.testsuites.testsuite || []
-  for (const testSuite of testSuites) {
-    const testCases = testSuite.testcase || []
-    for (const testCase of testCases) {
-      const file = testCase.$.name
-      const time = parseFloat(testCase.$.time)
-      const total_time = testFileResults.get(file) || 0
-      testFileResults.set(file, total_time + time)
-    }
-  }
-  return testFileResults
-}
-
 // Function to unzip the artifact
 function unzipArtifact(zipFilePath) {
   try {
@@ -165,39 +156,3 @@ async function downloadArtifact(artifact, token) {
     console.error('Error downloading artifact:', error)
   }
 }
-
-// List the contents of the directory to verify extraction
-// readdir(outputDir, (err, files) => {
-//   if (err) {
-//     console.error('Error reading unzipped directory:', err)
-//   } else {
-//     console.log('Unzipped files:', files)
-
-//     const artifactFilePath = path.resolve(
-//       __dirname,
-//       'zip_result',
-//       'merged-jest-junit.xml'
-//     )
-
-//     const parser = new xml2js.Parser()
-
-//     // Read the XML file
-//     readFile(artifactFilePath, (err, data) => {
-//       if (err) {
-//         console.error('Failed to read the XML file:', err)
-//         return
-//       }
-
-//       // Parse the XML file
-//       parser.parseString(data, (err, result) => {
-//         if (err) {
-//           console.error('Failed to parse XML:', err)
-//           return
-//         }
-//         const json = JSON.stringify(result, null, 2)
-//         // Output the JSON result
-//         console.log('XML converted to JSON:', json)
-//       })
-//     })
-//   }
-// })
