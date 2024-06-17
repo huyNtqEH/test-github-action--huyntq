@@ -10,11 +10,6 @@ import fetch from 'node-fetch'
 import path from 'path'
 import glob from 'glob'
 
-const testData = [
-  'src/modules/aiImport/pages/AiEmployeeCreation/__tests__/index.spec.tsx',
-  'src/modules/aiImport/pages/AiEmployeeCreation/apiCalls/__tests__/index.spec.tsx'
-]
-
 /**
  * The main function for the action.
  * @returns {Promise<void>} Resolves when the action is complete.
@@ -142,7 +137,7 @@ async function unzipArtifact(zipFilePath) {
         nodeTotalTimes[i] = 0
       }
 
-      const currentTestSuiteWithTiming = testData
+      const currentTestSuiteWithTiming = specFiles
         .map(file => {
           const found = testSuites.find(meta => meta.$.name === file)
           if (found) {

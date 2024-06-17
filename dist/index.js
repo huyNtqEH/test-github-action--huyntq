@@ -42622,10 +42622,6 @@ const xml2js = __importStar(__nccwpck_require__(6189));
 const node_fetch_1 = __importDefault(__nccwpck_require__(1793));
 const path_1 = __importDefault(__nccwpck_require__(1017));
 const glob_1 = __importDefault(__nccwpck_require__(1957));
-const testData = [
-    'src/modules/aiImport/pages/AiEmployeeCreation/__tests__/index.spec.tsx',
-    'src/modules/aiImport/pages/AiEmployeeCreation/apiCalls/__tests__/index.spec.tsx'
-];
 /**
  * The main function for the action.
  * @returns {Promise<void>} Resolves when the action is complete.
@@ -42731,7 +42727,7 @@ async function unzipArtifact(zipFilePath) {
                 nodes[i] = '';
                 nodeTotalTimes[i] = 0;
             }
-            const currentTestSuiteWithTiming = testData
+            const currentTestSuiteWithTiming = specFiles
                 .map(file => {
                 const found = testSuites.find(meta => meta.$.name === file);
                 if (found) {
