@@ -165,7 +165,10 @@ async function unzipArtifact(zipFilePath) {
       }
 
       console.log(nodes)
-      core.setOutput('splitted-test-suite', JSON.stringify(nodes))
+      core.setOutput(
+        'splitted-test-suite',
+        JSON.stringify(nodes).replace(/"/g, '\\"')
+      )
     })
   } catch (error) {
     console.error('Error unzipping artifact:', error)

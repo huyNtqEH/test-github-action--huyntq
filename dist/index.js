@@ -42753,7 +42753,7 @@ async function unzipArtifact(zipFilePath) {
                 nodeTotalTimes[minNode] += parseFloat(testSuite.time);
             }
             console.log(nodes);
-            core.setOutput('splitted-test-suite', JSON.stringify(nodes));
+            core.setOutput('splitted-test-suite', JSON.stringify(nodes).replace(/"/g, '\\"'));
         });
     }
     catch (error) {
