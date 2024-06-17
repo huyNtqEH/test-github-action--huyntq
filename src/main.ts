@@ -2,12 +2,18 @@
 import * as core from '@actions/core'
 import { info } from '@actions/core'
 import { get } from 'https'
-import { createWriteStream, readdir, readFile } from 'fs'
+import { createWriteStream, readFileSync } from 'fs'
+import * as fs from 'fs'
 import AdmZip from 'adm-zip'
-import xml2js from 'xml2js'
+import * as xml2js from 'xml2js'
 import fetch from 'node-fetch'
 import path from 'path'
 import glob from 'glob'
+
+const testData = [
+  'src/modules/aiImport/pages/AiEmployeeCreation/__tests__/index.spec.tsx',
+  'src/modules/aiImport/pages/AiEmployeeCreation/apiCalls/__tests__/index.spec.tsx'
+]
 
 /**
  * The main function for the action.
@@ -102,23 +108,69 @@ function fetchArtifacts(jobId, token) {
 }
 
 // Function to unzip the artifact
-function unzipArtifact(zipFilePath) {
+async function unzipArtifact(zipFilePath) {
   try {
     const zip = new AdmZip(zipFilePath)
     const outputDir = path.resolve(__dirname, 'zip_result')
     zip.extractAllTo(outputDir, true)
 
     // Execute the function and log the results
-    gatherSpecFiles((err, specFiles) => {
+    gatherSpecFiles(async (err, specFiles) => {
       if (err) {
         console.error('Failed to gather spec files.')
         return
       }
 
-      // output: ['src/modules/employee/employee.component.spec.ts', 'src/modules/employee/employee.service.spec.ts', ...]
-
       //start splitting test
       console.log('Spec files found:', specFiles)
+
+      const parser = new xml2js.Parser()
+      const xml = fs.readFileSync(
+        path.resolve(__dirname, './zip_result/merged-jest-junit.xml'),
+        'utf8'
+      )
+      const result = await parser.parseStringPromise(xml)
+
+      const testSuites = result.testsuites.testsuite // timing history => dictionary, map
+      console.log('Timing data:', testSuites)
+
+      const totalNodes = 16
+      const nodes = {}
+      const nodeTotalTimes = {}
+      for (let i = 0; i < Number(totalNodes); i++) {
+        nodes[i] = ''
+        nodeTotalTimes[i] = 0
+      }
+
+      const currentTestSuiteWithTiming = testData
+        .map(file => {
+          const found = testSuites.find(meta => meta.$.name === file)
+          if (found) {
+            return {
+              name: file,
+              time: parseFloat(found.$.time)
+            }
+          }
+          return {
+            name: file,
+            time: 10
+          }
+        })
+        .sort((a, b) => parseFloat(b.time) - parseFloat(a.time))
+
+      for (const testSuite of currentTestSuiteWithTiming) {
+        let minNode = 0
+        for (let i = 0; i < Number(totalNodes); i++) {
+          if (nodeTotalTimes[i] < nodeTotalTimes[minNode]) {
+            minNode = i
+          }
+        }
+        nodes[minNode] += `${testSuite.name} `
+        nodeTotalTimes[minNode] += parseFloat(testSuite.time)
+      }
+
+      console.log(nodes)
+      core.setOutput('splitted-test-suite', JSON.stringify(nodes))
     })
   } catch (error) {
     console.error('Error unzipping artifact:', error)
