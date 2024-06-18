@@ -116,9 +116,6 @@ async function unzipArtifact(zipFilePath) {
         return
       }
 
-      //start splitting test
-      console.log('Spec files found:', specFiles)
-
       const parser = new xml2js.Parser()
       const xml = fs.readFileSync(
         path.resolve(__dirname, './zip_result/merged-jest-junit.xml'),
@@ -127,7 +124,6 @@ async function unzipArtifact(zipFilePath) {
       const result = await parser.parseStringPromise(xml)
 
       const testSuites = result.testsuites.testsuite // timing history => dictionary, map
-      console.log('Timing data:', testSuites)
 
       const totalNodes = 16
       const nodes = {}
@@ -141,7 +137,6 @@ async function unzipArtifact(zipFilePath) {
         .map(file => {
           const found = testSuites.find(meta => meta.$.name === file)
           if (found) {
-            console.log('Found:', file, found.$.time)
             return {
               name: file,
               time: parseFloat(found.$.time)
@@ -165,7 +160,6 @@ async function unzipArtifact(zipFilePath) {
         nodeTotalTimes[minNode] += parseFloat(testSuite.time)
       }
 
-      console.log(nodes)
       core.setOutput(
         'splitted-test-suite',
         JSON.stringify(nodes).replace(/"/g, '\\"')
