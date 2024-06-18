@@ -141,6 +141,7 @@ async function unzipArtifact(zipFilePath) {
         .map(file => {
           const found = testSuites.find(meta => meta.$.name === file)
           if (found) {
+            console.log('Found:', file, found.$.time)
             return {
               name: file,
               time: parseFloat(found.$.time)
