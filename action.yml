@@ -12,20 +12,11 @@ inputs:
   TOKEN: 
     description: "Github token"
     required: true
-  LATEST_RUN_ID: 
-    description: "Id to get artifacts"
-    required: true
-  milliseconds:
-    description: 'Your input description here'
-    required: true
-    default: '1000'
 
 # Define your outputs here.
 outputs:
   time:
     description: 'Your output description here'
-  splitted-test-suite:
-    description: "splitted test suite"
 
 runs:
   using: node20
