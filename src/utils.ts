@@ -1,8 +1,10 @@
 // @ts-nocheck
 import { promises as fs } from 'fs'
 import path from 'path'
+import { DefaultArtifactClient } from '@actions/artifact'
 
 export const splitTestSuite = async (totalFiles = [], testReportData = []) => {
+  const artifact = new DefaultArtifactClient()
   const totalNodes = 16
   const nodes = {}
   const nodeTotalTimes = {}
@@ -44,6 +46,21 @@ export const splitTestSuite = async (totalFiles = [], testReportData = []) => {
     await fs.mkdir(outputDir, { recursive: true })
   }
   await fs.writeFile(outputFilePath, JSON.stringify(nodes))
+
+  console.log('outputFile', outputFilePath)
+
+  const { id, size } = await artifact.uploadArtifact(
+    // name of the artifact
+    'split-test-results',
+    // files to include (supports absolute and relative paths)
+    [outputFilePath],
+    {
+      // optional: how long to retain the artifact
+      // if unspecified, defaults to repository/org retention settings (the limit of this value)
+      retentionDays: 10
+    }
+  )
+  console.log(`Created artifact with id: ${id} (bytes: ${size}`)
 }
 
 export const exists = async (filePath: string): Promise<boolean> => {
