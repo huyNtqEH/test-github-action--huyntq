@@ -11,8 +11,6 @@ import { downloadArtifact } from './artifact_handlers'
  * @returns {Promise<void>} Resolves when the action is complete.
  */
 
-const targetDirectory = 'apps/hr-web-app' // Directory to search within
-
 const stripToSrcModule = filePath => {
   const pattern = 'src/modules/'
   const index = filePath.indexOf(pattern)
@@ -24,6 +22,8 @@ const stripToSrcModule = filePath => {
 
 // Function to gather all .spec files in the repo
 export const gatherSpecFiles = callback => {
+  const targetDirectory = core.getInput('DIRECTORY') || 'apps/hr-web-app'
+
   const pattern = `${targetDirectory}/src/**/*.spec.{js,ts,tsx}` // Pattern to match all .spec.js files
 
   // Use glob to match files based on the pattern
@@ -33,10 +33,7 @@ export const gatherSpecFiles = callback => {
       return callback(err)
     }
 
-    // Resolve absolute paths for the spec files
-    const absolutePaths = files.map(file => path.resolve(file))
-
-    callback(null, absolutePaths.map(stripToSrcModule))
+    callback(null, files)
   })
 }
 
