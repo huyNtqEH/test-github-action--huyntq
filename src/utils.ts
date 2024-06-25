@@ -1,9 +1,11 @@
 // @ts-nocheck
+import * as core from '@actions/core'
 import { promises as fs } from 'fs'
 import path from 'path'
 import { DefaultArtifactClient } from '@actions/artifact'
 
 export const splitTestSuite = async (totalFiles = [], testReportData = []) => {
+  const resultName = core.getInput('RESULT_NAME') || 'split-test-results'
   const artifact = new DefaultArtifactClient()
   const totalNodes = 16
   const nodes = {}
@@ -49,14 +51,14 @@ export const splitTestSuite = async (totalFiles = [], testReportData = []) => {
 
   const { id, size } = await artifact.uploadArtifact(
     // name of the artifact
-    'split-test-results',
+    resultName,
     // files to include (supports absolute and relative paths)
     ['./split-test-results/split-test-results.json'],
     path.resolve('./split-test-results'),
     {
       // optional: how long to retain the artifact
       // if unspecified, defaults to repository/org retention settings (the limit of this value)
-      retentionDays: 10
+      retentionDays: 1
     }
   )
   console.log(`Created artifact with id: ${id} (bytes: ${size}`)

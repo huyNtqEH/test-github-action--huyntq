@@ -12,9 +12,10 @@ inputs:
   TOKEN: 
     description: "Github token"
     required: true
-  DIRECTIVE: 
+  DIRECTORY: 
     description: "Directory to search for test files"
-    required: true
+  RESULT_NAME:
+    description: "Name of the result file"
 
 # Define your outputs here.
 outputs:
