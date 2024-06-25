@@ -23,7 +23,7 @@ const stripToSrcModule = filePath => {
 }
 
 // Function to gather all .spec files in the repo
-const gatherSpecFiles = callback => {
+export const gatherSpecFiles = callback => {
   const pattern = `${targetDirectory}/src/**/*.spec.{js,ts,tsx}` // Pattern to match all .spec.js files
 
   // Use glob to match files based on the pattern

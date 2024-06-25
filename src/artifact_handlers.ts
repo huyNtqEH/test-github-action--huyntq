@@ -5,6 +5,7 @@ import * as xml2js from 'xml2js'
 import fetch from 'node-fetch'
 import path from 'path'
 import { promises as fs } from 'fs'
+import { gatherSpecFiles } from './main'
 
 // Function to unzip the artifact
 export const unzipArtifact = async zipFilePath => {

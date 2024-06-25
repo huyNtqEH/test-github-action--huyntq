@@ -47,13 +47,12 @@ export const splitTestSuite = async (totalFiles = [], testReportData = []) => {
   }
   await fs.writeFile(outputFilePath, JSON.stringify(nodes))
 
-  console.log('outputFile', outputFilePath)
-
   const { id, size } = await artifact.uploadArtifact(
     // name of the artifact
     'split-test-results',
     // files to include (supports absolute and relative paths)
-    [outputFilePath],
+    ['./split-test-results/split-test-results.json'],
+    path.resolve('./split-test-results'),
     {
       // optional: how long to retain the artifact
       // if unspecified, defaults to repository/org retention settings (the limit of this value)
