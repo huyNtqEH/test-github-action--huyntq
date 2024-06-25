@@ -1,6 +1,5 @@
 // @ts-nocheck
 import * as core from '@actions/core'
-import path from 'path'
 import glob from 'glob'
 import { splitTestSuite } from './utils'
 import { getLatestWorkflowId, getArtifacts } from './requests'
