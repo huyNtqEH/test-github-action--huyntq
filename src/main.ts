@@ -11,15 +11,6 @@ import { downloadArtifact } from './artifact_handlers'
  * @returns {Promise<void>} Resolves when the action is complete.
  */
 
-const stripToSrcModule = filePath => {
-  const pattern = 'src/modules/'
-  const index = filePath.indexOf(pattern)
-  if (index !== -1) {
-    return filePath.substring(index)
-  }
-  return filePath // Return the original path if 'src/modules/' is not found
-}
-
 // Function to gather all .spec files in the repo
 export const gatherSpecFiles = callback => {
   const targetDirectory = core.getInput('DIRECTORY') || 'apps/hr-web-app'
